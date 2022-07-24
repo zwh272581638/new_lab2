@@ -33,6 +33,7 @@ func (rf *Raft) becomeCandidate() {
 	rf.getVoteNum = 1
 	rf.currentTerm += 1
 	//fmt.Printf("rf.me:%d----rf.currentTerm: %d-----rf..votedFor: %d\n", rf.me, rf.currentTerm, rf.votedFor)
+	rf.persist()
 	rf.JoinElection()
 	rf.lastResetElectionTime = time.Now()
 }
@@ -41,4 +42,5 @@ func (rf *Raft) becomeFollower(Term int) {
 	rf.currentTerm = Term
 	rf.votedFor = -1
 	rf.getVoteNum = 0
+	rf.persist()
 }

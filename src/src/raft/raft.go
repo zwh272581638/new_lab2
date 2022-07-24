@@ -27,9 +27,14 @@ type Raft struct {
 	commitIndex int   // 状态机中已知的被提交的日志条目的索引值(初始化为0，持续递增）
 	lastApplied int   // 最后一个被追加到状态机日志的索引值
 
+	// 2D快照
+	lastIncludedIndex int
+	lastIncludedTerm  int
+
 	lastResetElectionTime time.Time
 	applyCh               chan ApplyMsg
 	applyCond             *sync.Cond // condition to trigger apply log entry
+
 }
 
 func (rf *Raft) GetState() (int, bool) {
@@ -150,7 +155,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	appendLog := Entry{Term: rf.currentTerm, Command: command}
 	rf.log.Entries = append(rf.log.Entries, appendLog)
 	index = len(rf.log.Entries) - 1
-
+	rf.persist()
 	return index, term, isLeader
 }
 

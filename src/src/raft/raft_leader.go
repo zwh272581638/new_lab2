@@ -79,6 +79,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 
 		reply.VoteGranted = true
 		rf.votedFor = args.CandidateId
+		rf.persist()
 		//fmt.Printf("rf.me:%d----rf.currentTerm: %d-----rf..votedFor: %d\n", rf.me, rf.currentTerm, rf.votedFor)
 		rf.lastResetElectionTime = time.Now()
 	} else {

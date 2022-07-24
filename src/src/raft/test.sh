@@ -1,3 +1,3 @@
 #!/bin/zsh
 
-sh ./test_race.sh -r 100 -p 8 -t 2B -c -race
+sh ./test_race.sh -r 10 -p 2 -t 2C -c -race

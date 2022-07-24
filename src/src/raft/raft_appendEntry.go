@@ -26,6 +26,9 @@ func (rf *Raft) leaderSendEntries() {
 			if nextIndex > len(rf.log.Entries) {
 				nextIndex = len(rf.log.Entries)
 			}
+			if nextIndex <= 0 {
+				nextIndex = 1
+			}
 			prevLogIndex := nextIndex - 1
 			aeArgs := AppendEntriesArgs{
 				rf.currentTerm,
@@ -110,8 +113,6 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	}
 	if args.Term > rf.currentTerm {
 		rf.becomeFollower(args.Term)
-		//rf.lastResetElectionTime = time.Now()
-		//return
 	}
 	if rf.state != Follower {
 		rf.becomeFollower(args.Term)
@@ -123,6 +124,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	reply.Success = false
 	reply.ConflictIndex = -1
 	reply.ConflictTerm = -1
+	rf.persist()
 
 	// append entries rpc 2
 	if len(rf.log.Entries) <= args.PrevLogIndex {
@@ -148,10 +150,12 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		// #3, conflict occurs, truncate peer's logs
 		if entryIndex < len(rf.log.Entries) && rf.log.Entries[entryIndex].Term != entry.Term {
 			rf.log.Entries = rf.log.Entries[:entryIndex]
+			rf.persist()
 		}
 		// #4, append new entries (if any)
 		if entryIndex >= len(rf.log.Entries) {
 			rf.log.Entries = append(rf.log.Entries, args.Entries[i:]...)
+			rf.persist()
 			break
 		}
 	}
