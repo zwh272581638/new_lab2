@@ -38,9 +38,11 @@ func (rf *Raft) becomeCandidate() {
 	rf.lastResetElectionTime = time.Now()
 }
 func (rf *Raft) becomeFollower(Term int) {
-	rf.state = Follower
-	rf.currentTerm = Term
-	rf.votedFor = -1
-	rf.getVoteNum = 0
-	rf.persist()
+	if Term > rf.currentTerm {
+		rf.state = Follower
+		rf.currentTerm = Term
+		rf.votedFor = -1
+		rf.getVoteNum = 0
+		rf.persist()
+	}
 }

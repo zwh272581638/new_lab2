@@ -115,7 +115,11 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.becomeFollower(args.Term)
 	}
 	if rf.state != Follower {
-		rf.becomeFollower(args.Term)
+		//rf.becomeFollower(args.Term)
+		rf.state = Follower
+		rf.currentTerm = args.Term
+		rf.votedFor = -1
+		rf.persist()
 	}
 
 	rf.lastResetElectionTime = time.Now()
