@@ -1,7 +1,6 @@
 package raft
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -16,8 +15,8 @@ func (rf *Raft) JoinElection() {
 			args := RequestVoteArgs{
 				rf.currentTerm,
 				rf.me,
-				0,
-				0,
+				rf.getLastIndex(),
+				rf.getLastTerm(),
 			}
 			voteReply := RequestVoteReply{}
 			rf.mu.Unlock()
@@ -37,14 +36,11 @@ func (rf *Raft) JoinElection() {
 			if !voteReply.VoteGranted {
 				return
 			}
-			//if rf.state != Candidate || args.Term != rf.currentTerm {
-			//	return
-			//}
 
 			if rf.state == Candidate && voteReply.VoteGranted == true && rf.currentTerm == args.Term {
 				rf.getVoteNum += 1
 				if rf.getVoteNum >= len(rf.peers)/2+1 {
-					fmt.Printf("%d成为了leader\n", rf.me)
+					//fmt.Printf("%d成为了leader\n", rf.me)
 					rf.becomeLeader()
 					rf.leaderSendEntries()
 					return
@@ -79,11 +75,11 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 		reply.Term = rf.currentTerm
 		return
 	}
-	if rf.votedFor == -1 || rf.votedFor == args.CandidateId {
+	if (rf.votedFor == -1 || rf.votedFor == args.CandidateId) && rf.UpToDate(args.LastLogIndex, args.LastLogTerm) {
 
 		reply.VoteGranted = true
 		rf.votedFor = args.CandidateId
-		fmt.Printf("rf.me:%d----rf.currentTerm: %d-----rf..votedFor: %d\n", rf.me, rf.currentTerm, rf.votedFor)
+		//fmt.Printf("rf.me:%d----rf.currentTerm: %d-----rf..votedFor: %d\n", rf.me, rf.currentTerm, rf.votedFor)
 		rf.lastResetElectionTime = time.Now()
 	} else {
 		reply.VoteGranted = false
@@ -93,4 +89,31 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 func (rf *Raft) sendRequestVote(server int, args *RequestVoteArgs, reply *RequestVoteReply) bool {
 	ok := rf.peers[server].Call("Raft.RequestVote", args, reply)
 	return ok
+}
+
+func (rf *Raft) apply() {
+	rf.applyCond.Broadcast()
+}
+
+// apply an entry to state machine.
+func (rf *Raft) applier() {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+
+	for !rf.killed() {
+		// all server rule 1
+		if rf.commitIndex > rf.lastApplied && len(rf.log.Entries)-1 > rf.lastApplied {
+			rf.lastApplied++
+			applyMsg := ApplyMsg{
+				CommandValid: true,
+				Command:      rf.log.Entries[rf.lastApplied].Command,
+				CommandIndex: rf.lastApplied,
+			}
+			rf.mu.Unlock()
+			rf.applyCh <- applyMsg
+			rf.mu.Lock()
+		} else {
+			rf.applyCond.Wait()
+		}
+	}
 }

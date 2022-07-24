@@ -12,13 +12,19 @@ const (
 	Leader             State = "leader"
 	ElectionTimeoutMax       = 400
 	ElectionTimeoutMin       = 200
-	HeartBeatTimeOut         = 50
+	HeartBeatTimeOut         = 100
+	AppliedTimeOut           = 20
 )
 
 func (rf *Raft) becomeLeader() {
 	rf.state = Leader
 	//rf.votedFor = -1
 	rf.getVoteNum = 0
+	for i := 0; i < len(rf.peers); i++ {
+		rf.nextIndex[i] = len(rf.log.Entries)
+		rf.matchIndex[i] = 0
+	}
+	rf.matchIndex[rf.me] = rf.getLastIndex()
 	rf.lastResetElectionTime = time.Now()
 }
 func (rf *Raft) becomeCandidate() {
