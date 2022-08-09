@@ -66,36 +66,6 @@ func (rf *Raft) leaderAppendEntriesTicker() {
 		}
 	}
 }
-func (rf *Raft) committedToAppliedTicker() {
-	// put the committed entry to apply on the state machine
-	for rf.killed() == false {
-		time.Sleep(AppliedTimeOut * time.Millisecond)
-		rf.mu.Lock()
-
-		if rf.lastApplied >= rf.commitIndex {
-			rf.mu.Unlock()
-			continue
-		}
-
-		Messages := make([]ApplyMsg, 0)
-		for rf.lastApplied < rf.commitIndex && rf.lastApplied < rf.getLastIndex() {
-			//for rf.lastApplied < rf.commitIndex {
-			rf.lastApplied += 1
-			Messages = append(Messages, ApplyMsg{
-				CommandValid:  true,
-				SnapshotValid: false,
-				CommandIndex:  rf.lastApplied,
-				Command:       rf.getLogWithIndex(rf.lastApplied).Command,
-			})
-		}
-		rf.mu.Unlock()
-
-		for _, messages := range Messages {
-			rf.applyCh <- messages
-		}
-	}
-
-}
 
 func Make(peers []*labrpc.ClientEnd, me int,
 	persister *Persister, applyCh chan ApplyMsg) *Raft {
