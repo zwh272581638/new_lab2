@@ -1,7 +1,6 @@
 package raft
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -44,7 +43,6 @@ func (rf *Raft) JoinElection() {
 			if rf.state == Candidate && voteReply.VoteGranted == true && rf.currentTerm == args.Term {
 				rf.getVoteNum += 1
 				if rf.getVoteNum >= len(rf.peers)/2+1 {
-					fmt.Printf("%d成为了leader\n", rf.me)
 					rf.becomeLeader()
 					rf.leaderSendEntries()
 					return
@@ -74,7 +72,6 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	reply.Term = args.Term
 
 	if rf.votedFor != -1 && rf.votedFor != args.CandidateId {
-		//DPrintf("[ElectionReject+++++++]Server %d reject %d, Have voter for %d",rf.me,args.CandidateId,rf.votedFor)
 		reply.VoteGranted = false
 		reply.Term = rf.currentTerm
 		return
@@ -83,7 +80,6 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 
 		reply.VoteGranted = true
 		rf.votedFor = args.CandidateId
-		fmt.Printf("rf.me:%d----rf.currentTerm: %d-----rf..votedFor: %d\n", rf.me, rf.currentTerm, rf.votedFor)
 		rf.lastResetElectionTime = time.Now()
 	} else {
 		reply.VoteGranted = false

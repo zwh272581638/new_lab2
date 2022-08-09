@@ -1,7 +1,6 @@
 package raft
 
 import (
-	"fmt"
 	//	"bytes"
 	"sync"
 	"sync/atomic"
@@ -24,7 +23,7 @@ type Raft struct {
 	getVoteNum  int
 
 	commitIndex int // 状态机中已知的被提交的日志条目的索引值(初始化为0，持续递增）
-	lastApplied int // 最后一个被追加到状态机日志的索引值
+	lastApplied int // 最后一个被追加到状态机日志的索引值0
 
 	lastResetElectionTime time.Time
 	applyCh               chan ApplyMsg
@@ -44,7 +43,6 @@ func (rf *Raft) electionTimeoutTicker() {
 		rf.mu.Lock()
 
 		if rf.lastResetElectionTime.Before(nowTime) && rf.state != Leader {
-			fmt.Printf("%d超时变为candidate,当前任期%d\n", rf.me, rf.currentTerm+1)
 			rf.becomeCandidate()
 		}
 		rf.mu.Unlock()

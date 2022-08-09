@@ -1,7 +1,6 @@
 package raft
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -64,7 +63,6 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		reply.Success = false
 		return
 	}
-	fmt.Printf("%d收到心跳,当前任期是%d\n", rf.me, rf.currentTerm)
 	rf.lastResetElectionTime = time.Now()
 
 }
